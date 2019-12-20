@@ -25,7 +25,8 @@ void nQueens(int k, int n){
 
 bool place(int k,int i){				//See if Queen at k,i doesn't conflict with any Queens put before
 	for(int j=0;j<k;j++){
-		if((x[j]==i) || (abs(x[j]-i)==abs(j-k)))//If conflicts at Column or Diagonal, return false
+		if((x[j]==i) || 
+			(abs(x[j]-i)==abs(j-k)))	//If conflicts at Column or Diagonal, return false
 			return false;
 	}
 	return true;
