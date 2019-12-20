@@ -1,8 +1,10 @@
 #include<iostream>
 using namespace std;
 
-int largest(int a,int b,int c){
-	if(arr[a]>=arr[b] && arr[a]>=arr[c])
+
+
+int largest(int arr[], int len ,int a,int b,int c){
+	if((arr[a]>=arr[b] && arr[a]>=arr[c]) && (b))
 		return a;
 	if(arr[b]>=arr[a] && arr[b]>=arr[c])
 		return b;
@@ -13,8 +15,8 @@ int heapify(int arr[] , int len , int i){
 	//arr is array
 	//len is length
 	//i is index
-	int large = largest(i,i*2+1,i*2+2);
-
+	int largest = largest(arr,len,i,i*2+1,i*2+2);
+	
 }
 
 int main(){
