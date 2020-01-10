@@ -8,7 +8,29 @@ int LC=0;	//Location Counter
 int PTP=0;	//Pooltab Pointer
 int LTP=0;	//Location Table Pointer
 int STP=0;	//Symbol Table Pointer
-int POOLTAB=0;
+int POOLTAB[1000];
+
+typedef struct Symbol{
+	string name;
+	int address;
+	string size;
+}Symbol;
+
+Symbol SYMTAB[100];
+int checkSYMTAB(string name){
+	for(int i=0 ; i<100 ; i++){
+		if(name.compare(SYMTAB[0].name)==0)
+			return i;
+	}
+	return -1;
+}
+
+typedef struct Literal{
+	string name;
+	int address;
+}Literal;
+
+Literal LITTAB[100];
 
 char REG[4][2][5] = {
 	//REG[x][] is used for iteration,
@@ -21,7 +43,7 @@ char REG[4][2][5] = {
 };
 char* getReg(string str){
 	for(int i=0 ; i<4 ; i++)
-		if(strcasecmp(REG[i][0],str.c_str())==0)//Register Code Match
+		if(strcasecmp(REG[i][0],str.c_str())==0)		//Register Code Match
 			return REG[i][1];
 	return NULL;
 }
@@ -59,7 +81,6 @@ int getHash(string stri){
 	return val;
 }
 
-
 char POT[5][2][7] = {
 	//POT[][0] = Pseudo mnem code
 	//POT[][1] = intermediate machine code
@@ -69,13 +90,29 @@ char POT[5][2][7] = {
 	{"ORIGIN"	,"04"},	
 	{"EQU"		,"05"}	
 };
+int getAD(string stri){
+	char str[stri.length()+1];
+	strcpy(str,stri.c_str());
+	for(int i=0 ; i<5 ;i++)
+		if(strcasecmp(POT[i][0],str)==0)
+			return i;
+	return -1;
+}
 
 void compError(string str){
 	cout<<"Compilation Error: "<<str<<endl;
 }
 
 int main(int argc,char** argv){
+	if(argv[1]==NULL){
+		compError("No Input File");						//If first word not START, exit
+		return 0;
+	}
 	ifstream reader;
+	ofstream writer;
+	ofstream ad_writer;
+	writer.open("Pass1_OutPut");
+	writer.open("AD_OutPut");
 	reader.open(argv[1],ios::in);							//Open program for input
 	string line;
 	char c_line[line.length()+1];
@@ -84,7 +121,7 @@ int main(int argc,char** argv){
 	char* start_tok = strtok(c_line," ,\t");
 	if(strcasecmp(start_tok,"START")!=0){		
 		compError("InCorrect \"START\" in Program.");				//If first word not START, exit
-		return 1;
+		return 0;
 	}
 	int len=0;
 	while(start_tok!=NULL){
@@ -98,7 +135,7 @@ int main(int argc,char** argv){
 		}
 		else{
 			compError("InCorrect \"START\" in Program.");			//If START incorrect
-			return 1;
+			return 0;
 		}
 	}
 	while(!reader.eof()){								//Go till End of File
@@ -121,6 +158,57 @@ int main(int argc,char** argv){
 			cout<<line_tok[i]<<"\t";
 		cout<<"No. of Tokens in String is: "<<len<<endl;
 		/////////////////////////////////////////////////////////////////////////////////////////
+		//Now converting
+		int pt=0;	//Keep track of which token of the line
+		int index = getHash(line_tok[pt]);
+		if(index==-1){
+			index = getAD(line_tok[pt]);
+			if(index==-1){					//LABEL is present
+				cout<<"\t//"<<line_tok[pt]<<" will be treated a as a label"<<endl;
+				Symbol temp;
+				int SYMindex = checkSYMTAB(line_tok[pt]);
+				if(SYMindex==-1){			//Does not Exist in SYMTAB
+					//Code to add to SYMTAB		
+					temp = {line_tok[pt++],LC,""}
+					SYMTAB[STP++] = temp;
+				}
+				else{							//Exists in SYMTAB
+					temp = SYMTAB[SYMindex];
+					temp.
+					
+				}
+							
+				if(pt==len){
+					compError("Only a symbol on a line?");
+					return 0;
+				}
+				index = getHash(line_tok[pt]);
+				if(index==-1){				//Token after symbol does not match MOT
+					index = getAD(line_tok[pt]);
+					if(index==-1){			//Token after symbol does not match ADT
+						compError("Incorrect Instruction");
+						return 0;
+					}
+					else{		//Second token is an AD Statement
+					
+					}
+				}
+				else{			//Second token is a MOT Statement
+					
+				}		
+				SYMTAB[STP++] = temp;
+			}
+			else{							//No Symbol and an AD Statement
+				if(index==1){				//End Statement
+					cout<<"This is an END statement"<<endl;
+					return 0;
+				}
+			}
+		}
+		else{								//No Symbol and a MOT Statement
+			
+		}
+		
 	}
 	reader.close();
 	return 0;
