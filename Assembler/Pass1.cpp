@@ -1,34 +1,39 @@
-#include<iostream>
-#include<fstream>
-#include<string>
-#include<cstring>
+#include <iostream>
+#include <stdlib.h>
+#include <fstream>
+#include <string>
+#include <cstring>
 using namespace std;
 
-int LC=0;	//Location Counter
-int PTP=0;	//Pooltab Pointer
-int LTP=0;	//Location Table Pointer
-int STP=0;	//Symbol Table Pointer
+int LC = 0;  //Location Counter
+int PTP = 0; //Pooltab Pointer
+int LTP = 0; //Location Table Pointer
+int STP = 0; //Symbol Table Pointer
 int POOLTAB[1000];
 
-typedef struct Symbol{
+typedef struct Symbol
+{
 	string name;
 	int address;
-	string size;
-}Symbol;
+	string size; //Also called length
+} Symbol;
 
 Symbol SYMTAB[100];
-int checkSYMTAB(string name){
-	for(int i=0 ; i<100 ; i++){
-		if(name.compare(SYMTAB[0].name)==0)
+int checkSYMTAB(string name)
+{
+	for (int i = 0; i < STP; i++)
+	{
+		if (name.compare(SYMTAB[0].name) == 0)
 			return i;
 	}
 	return -1;
 }
 
-typedef struct Literal{
+typedef struct Literal
+{
 	string name;
 	int address;
-}Literal;
+} Literal;
 
 Literal LITTAB[100];
 
@@ -41,14 +46,16 @@ char REG[4][2][5] = {
 	{"CREG","R03"},
 	{"DREG","R04"}
 };
-char* getReg(string str){
-	for(int i=0 ; i<4 ; i++)
-		if(strcasecmp(REG[i][0],str.c_str())==0)		//Register Code Match
+
+char *getReg(string str)
+{
+	for (int i = 0; i < 4; i++)
+		if (strcasecmp(REG[i][0], str.c_str()) == 0) //Register Code Match
 			return REG[i][1];
 	return NULL;
 }
 
-char MOT[13][6][6]= {	
+char MOT[13][6][6]={	
 /*0*/		{"MULT"	,"03","IS","2"		,"2",	"-1"},
 /*1*/		{"READ"	,"09","IS","2"		,"1",	"-1"},
 /*2*/		{"MOVEM","05","IS","2"		,"2",	"3"},
@@ -65,21 +72,31 @@ char MOT[13][6][6]= {
 };
 //MOT[][x] where x=0 for mnem.code , 1 for machine, 2 for class, 3 for length of IS, 4 for no. of operands
 
-int getHash(string stri){
-	char str[stri.length()+1];
-	strcpy(str,stri.c_str());
+int getHash(string stri)
+{
+	char str[stri.length() + 1];
+	strcpy(str, stri.c_str());
 	int val = 0;
-	for(int i=0 ; i<stri.length() ; i++)
-		val+=(str[i]-64);
-	val%=13;
-	val--;	
-	while(strcasecmp(MOT[val][0],str)!=0){
-		sscanf(MOT[val][5],"%d",&val);
-		if(val==-1)
+	for (int i = 0; i < stri.length(); i++)
+		val += (str[i] - 64);
+	val %= 13;
+	val--;
+	while (strcasecmp(MOT[val][0], str) != 0)
+	{
+		sscanf(MOT[val][5], "%d", &val);
+		if (val == -1)
 			break;
 	}
 	return val;
 }
+bool isImperative(string inst){
+	char* instr;
+	strcpy(instr,inst.c_str());
+	if(instr[0]=='I' && instr[1]=='S')
+		return true;
+	return false;
+}
+
 
 char POT[5][2][7] = {
 	//POT[][0] = Pseudo mnem code
@@ -90,6 +107,7 @@ char POT[5][2][7] = {
 	{"ORIGIN"	,"04"},	
 	{"EQU"		,"05"}	
 };
+
 int getAD(string stri){
 	char str[stri.length()+1];
 	strcpy(str,stri.c_str());
@@ -97,6 +115,14 @@ int getAD(string stri){
 		if(strcasecmp(POT[i][0],str)==0)
 			return i;
 	return -1;
+}
+
+bool isDeclarative(string inst){
+	char* instr;
+	strcpy(instr,inst.c_str());
+	if(instr[0]=='D' && instr[1]=='L')
+		return true;
+	return false;
 }
 
 void compError(string str){
@@ -139,9 +165,13 @@ int main(int argc,char** argv){
 		}
 	}
 	while(!reader.eof()){								//Go till End of File
+		string label,inst,op1,op2;
+		string output;
 		getline(reader,line);							//Read line
 		if(reader.eof())							//If file ended leave loop
 			break;
+		///////////////////////////////////////////////////////////////////////////////////////
+		//Now Tokenizng statement
 		char c_line[line.length()+1];
 		strcpy(c_line,line.c_str());
 		string line_tok[4];							//Define array of strings
@@ -154,31 +184,31 @@ int main(int argc,char** argv){
 				break;
 			line_tok[len++] = temp;						//Add token to Array of tokens
 		}
-		for(int i=0;i<len;i++)
-			cout<<line_tok[i]<<"\t";
-		cout<<"No. of Tokens in String is: "<<len<<endl;
+		// for(int i=0;i<len;i++)
+			// cout<<line_tok[i]<<"\t";
+		// cout<<"No. of Tokens in String is: "<<len<<". ";
 		/////////////////////////////////////////////////////////////////////////////////////////
 		//Now converting
 		int pt=0;	//Keep track of which token of the line
 		int index = getHash(line_tok[pt]);
-		if(index==-1){
+		if(index==-1){						//Token not a part of MOT
 			index = getAD(line_tok[pt]);
-			if(index==-1){					//LABEL is present
-				cout<<"\t//"<<line_tok[pt]<<" will be treated a as a label"<<endl;
+			if(index==-1){					//Token not a part of MOT either, i.e LABEL is present
+				label = line_tok[pt];
+				// cout<<"\t//"<<label<<" will be treated a as a label"<<endl;
 				Symbol temp;
-				int SYMindex = checkSYMTAB(line_tok[pt]);
+				int SYMindex = checkSYMTAB(label);
 				if(SYMindex==-1){			//Does not Exist in SYMTAB
 					//Code to add to SYMTAB		
-					temp = {line_tok[pt++],LC,""}
+					temp = {label.c_str(),LC,""};
 					SYMTAB[STP++] = temp;
 				}
-				else{							//Exists in SYMTAB
+				else{						//Exists in SYMTAB
 					temp = SYMTAB[SYMindex];
-					temp.
-					
+					temp.address = LC;
 				}
 							
-				if(pt==len){
+				if(++pt==len){
 					compError("Only a symbol on a line?");
 					return 0;
 				}
@@ -190,25 +220,104 @@ int main(int argc,char** argv){
 						return 0;
 					}
 					else{		//Second token is an AD Statement
-					
+						inst = line_tok[pt];
+						int counter = atoi(MOT[index][4]);
+						if (counter == len - pt -1)
+						{
+							if (counter == 2)
+							{
+								op1 = line_tok[pt + 1];
+								op2 = line_tok[pt + 2];
+							}
+							else if (counter == 1)
+							{
+								op1 = line_tok[pt + 1];
+							}
+						}
+						else
+						{
+							compError("Operator Lengths MisMatch");
+							return 0;
+						}
 					}
 				}
 				else{			//Second token is a MOT Statement
-					
+					inst = line_tok[pt];
+					int counter = atoi(MOT[index][4]);
+					if (counter == len - pt - 1)
+					{
+						if (counter == 2)
+						{
+							op1 = line_tok[pt + 1];
+							op2 = line_tok[pt + 2];
+						}
+						else if (counter == 1)
+						{
+							op1 = line_tok[pt + 1];
+						}
+					}
+					else
+					{
+						compError("Operator Lengths MisMatch");
+						return 0;
+					}
 				}		
 				SYMTAB[STP++] = temp;
+				cout<<"SYMTAB is changed with "<<temp.name<<", "<<temp.address<<", "<<temp.size<<endl;
 			}
 			else{							//No Symbol and an AD Statement
-				if(index==1){				//End Statement
-					cout<<"This is an END statement"<<endl;
+				inst = line_tok[pt];
+				if (len - pt - 1 == 1)
+					op1 = line_tok[pt + 1];
+				if (index == 1)
+				{ //End Statement
+					cout << "This is an END statement" << endl;
 					return 0;
 				}
 			}
 		}
 		else{								//No Symbol and a MOT Statement
-			
+			inst = line_tok[pt];
+			int counter = atoi(MOT[index][4]);
+			if (counter == len - 1)
+			{
+				if (counter == 2)
+				{
+					op1 = line_tok[pt + 1];
+					op2 = line_tok[pt + 2];
+				}
+				else if (counter == 1)
+				{
+					op1 = line_tok[pt + 1];
+				}
+			}
+			else
+			{
+				compError("Operator Lengths MisMatch");
+				return 0;
+			}
 		}
-		
+		cout<<"Label: "<<label<<"\t Inst: "<<inst<<"\top1: "<<op1<<"\top2: "<<op2<<endl;
+		if (inst.compare("LTORG")==0)
+		{
+
+		}
+		else if (inst.compare("ORIGIN"))
+		{
+			/* code */
+		}
+		else if (inst.compare("EQU"))
+		{
+			/* code */
+		}
+		else if (isImperative(inst))
+		{
+			/* code */
+		}
+		else if (isDeclarative(inst))
+		{
+			/* code */
+		}
 	}
 	reader.close();
 	return 0;
