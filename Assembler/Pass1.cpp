@@ -23,7 +23,7 @@ int checkSYMTAB(string name)
 {
 	for (int i = 0; i < STP; i++)
 	{
-		if (name.compare(SYMTAB[0].name) == 0)
+		if (name.compare(SYMTAB[i].name) == 0)
 			return i;
 	}
 	return -1;
@@ -34,6 +34,14 @@ typedef struct Literal
 	string name;
 	int address;
 } Literal;
+
+bool isLiteral(string name){
+	char* str;
+	strcpy(str,name.c_str());
+	if(str[0]=='=')
+		return true;
+	return false;
+}
 
 Literal LITTAB[100];
 
@@ -55,13 +63,13 @@ char *getReg(string str)
 	return NULL;
 }
 
-char MOT[13][6][6]={	
+char MOT[13][6][6]={
 /*0*/		{"MULT"	,"03","IS","2"		,"2",	"-1"},
 /*1*/		{"READ"	,"09","IS","2"		,"1",	"-1"},
 /*2*/		{"MOVEM","05","IS","2"		,"2",	"3"},
 /*3*/		{"SUB"	,"02","IS","2"		,"2",	"-1"},
 /*4*/		{"BC"	,"07","IS","2"		,"1",	"5"},
-/*5*/		{"STOP"	,"00","IS","2"		,"0",	"-1"}, 
+/*5*/		{"STOP"	,"00","IS","2"		,"0",	"-1"},
 /*6*/		{"DC"	,"01","DL","1"		,"1",	"-1"},
 /*7*/		{"COMP"	,"06","IS","2"		,"2",	"10"},
 /*8*/		{"ADD"	,"01","IS","2"		,"2",	"12"},
@@ -90,8 +98,11 @@ int getHash(string stri)
 	return val;
 }
 bool isImperative(string inst){
-	char* instr;
-	strcpy(instr,inst.c_str());
+		char instr[3];
+	int index = getHash(inst);
+	if(index==-1)
+		return false;
+	strcpy(instr,MOT[index][2]);
 	if(instr[0]=='I' && instr[1]=='S')
 		return true;
 	return false;
@@ -103,9 +114,9 @@ char POT[5][2][7] = {
 	//POT[][1] = intermediate machine code
 	{"START"	,"01"},
 	{"END"		,"02"},
-	{"LTORG"	,"03"},	
-	{"ORIGIN"	,"04"},	
-	{"EQU"		,"05"}	
+	{"LTORG"	,"03"},
+	{"ORIGIN"	,"04"},
+	{"EQU"		,"05"}
 };
 
 int getAD(string stri){
@@ -118,8 +129,11 @@ int getAD(string stri){
 }
 
 bool isDeclarative(string inst){
-	char* instr;
-	strcpy(instr,inst.c_str());
+	char instr[3];
+	int index = getHash(inst);
+	if(index==-1)
+		return false;
+	strcpy(instr,MOT[index][2]);
 	if(instr[0]=='D' && instr[1]=='L')
 		return true;
 	return false;
@@ -135,17 +149,17 @@ int main(int argc,char** argv){
 		return 0;
 	}
 	ifstream reader;
-	ofstream writer;
-	ofstream ad_writer;
-	writer.open("Pass1_OutPut");
-	writer.open("AD_OutPut");
+	ofstream fout;
+	ofstream ad_fout;
+	fout.open("Pass1_OutPut");
+	ad_fout.open("AD_OutPut");
 	reader.open(argv[1],ios::in);							//Open program for input
 	string line;
 	char c_line[line.length()+1];
 	getline(reader,line);								//Read first line from program
 	strcpy(c_line,line.c_str());
 	char* start_tok = strtok(c_line," ,\t");
-	if(strcasecmp(start_tok,"START")!=0){		
+	if(strcasecmp(start_tok,"START")!=0){
 		compError("InCorrect \"START\" in Program.");				//If first word not START, exit
 		return 0;
 	}
@@ -199,15 +213,16 @@ int main(int argc,char** argv){
 				Symbol temp;
 				int SYMindex = checkSYMTAB(label);
 				if(SYMindex==-1){			//Does not Exist in SYMTAB
-					//Code to add to SYMTAB		
+					//Code to add to SYMTAB
+					cout<<label<<" is being added to SYMTAB"<<endl;
 					temp = {label.c_str(),LC,""};
-					SYMTAB[STP++] = temp;
+					SYMTAB[STP] = temp;
 				}
 				else{						//Exists in SYMTAB
 					temp = SYMTAB[SYMindex];
 					temp.address = LC;
 				}
-							
+
 				if(++pt==len){
 					compError("Only a symbol on a line?");
 					return 0;
@@ -261,7 +276,7 @@ int main(int argc,char** argv){
 						compError("Operator Lengths MisMatch");
 						return 0;
 					}
-				}		
+				}
 				SYMTAB[STP++] = temp;
 				cout<<"SYMTAB is changed with "<<temp.name<<", "<<temp.address<<", "<<temp.size<<endl;
 			}
@@ -272,7 +287,7 @@ int main(int argc,char** argv){
 				if (index == 1)
 				{ //End Statement
 					cout << "This is an END statement" << endl;
-					return 0;
+					// return 0;
 				}
 			}
 		}
@@ -297,28 +312,68 @@ int main(int argc,char** argv){
 				return 0;
 			}
 		}
-		cout<<"Label: "<<label<<"\t Inst: "<<inst<<"\top1: "<<op1<<"\top2: "<<op2<<endl;
+		//Tokenisation End
+		cout<<LC;
 		if (inst.compare("LTORG")==0)
 		{
-
+			/* code */
 		}
-		else if (inst.compare("ORIGIN"))
+		 if (inst.compare("ORIGIN")==0)
 		{
 			/* code */
 		}
-		else if (inst.compare("EQU"))
+		 if (inst.compare("EQU")==0)
 		{
 			/* code */
 		}
-		else if (isImperative(inst))
+		 if (isImperative(inst))
 		{
 			/* code */
+			LC++;
 		}
-		else if (isDeclarative(inst))
+		 if (isDeclarative(inst))
 		{
-			/* code */
+			Symbol temp = SYMTAB[checkSYMTAB(label)];
+			temp.size = op1;
+			string op_copy = op1.c_str();
+			char csize[6];
+			if(inst.compare("DC")==0){
+			
+				inst = "(DL,01)";
+				op1.erase(0,1);
+				op1.erase(op1.length()-1,op1.length());
+				LC++;
+			}
+			else{
+				inst = "(DL,02)";
+				strcpy(csize,op1.c_str());
+				LC+=atoi(csize);
+			}
+			int index = checkSYMTAB(label);
+			if(index!=-1)
+				SYMTAB[index] = temp;
+			else
+				compError("Sudden Label MisMatch");
+			op1 = "(C,"+op_copy+")";
 		}
+		cout<<"\t"<<inst<<"\t"<<op1<<"\t"<<op2<<endl;
 	}
+	cout<<"Program wrapping UP\n";
+	cout<<"Final Values: \n";
+	cout<<"LC: "<<LC<<endl;
+	cout<<"PTP: "<<PTP<<endl;
+	cout<<"LTP: "<<LTP<<endl;
+	cout<<"STP: "<<STP<<endl;
+	// Write SYMBOL Table Start
+	cout<<"Symbol Table Below"<<endl;
+	for (int i = 0; i < STP; i++)
+	{
+		Symbol temp = SYMTAB[i];
+		cout<<temp.name<<"\t"<<temp.address<<"\t"<<temp.size<<endl;
+	}
+	// Write SYMBOL Table End
 	reader.close();
+	fout.close();
+	ad_fout.close();
 	return 0;
 }
