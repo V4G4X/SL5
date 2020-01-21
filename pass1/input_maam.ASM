@@ -1,0 +1,10 @@
+- START - -
+- MOVER AREG B
+- MOVEM BREG ='1'
+LOOP ADD AREG ='1'
+- LTORG - -
+- PRINT B -
+NEXT EQU LOOP -
+B DS 5 -
+- END - -
+

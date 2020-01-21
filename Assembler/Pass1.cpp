@@ -165,25 +165,146 @@ int main(int argc,char** argv){
 	}
 	int len=0;
 	while(start_tok!=NULL){
-		start_tok = strtok(NULL," ,\t")	;
-		if(start_tok==NULL && len!=0){
+		start_tok = strtok(NULL," ,\t");
+		if(start_tok==NULL){
+			LC=0;
 			break;
 		}
 		if(++len==1){
-			sscanf(start_tok,"%d",&LC);
+			LC=atoi(start_tok);
 			cout<<"LC Updated with "<<LC<<endl;
+			break;
 		}
 		else{
 			compError("InCorrect \"START\" in Program.");			//If START incorrect
 			return 0;
 		}
 	}
+	//New Tokenization Attempt
 	while(!reader.eof()){								//Go till End of File
 		string label,inst,op1,op2;
-		string output;
 		getline(reader,line);							//Read line
+		strcpy(c_line,line.c_str());
 		if(reader.eof())							//If file ended leave loop
 			break;
+		//Create Tokens First	
+		string line_tok[4];							//Define array of strings
+		char *temp = strtok(c_line," ,\t");					//Tokenize the string
+		line_tok[0] = temp;
+		int len=1;								//Counter for no. of tokens
+		while(temp!=NULL){
+			temp=strtok(NULL," ,\t");
+			if(temp==NULL)
+				break;
+			line_tok[len++] = temp;						//Add token to Array of tokens
+		}
+		if(len==4){
+			label = line_tok[0];
+			inst = line_tok[1];
+			op1 = line_tok[2];
+			op2 = line_tok[3];
+		}
+		else if(len==3){
+			//If first token is a label/symbol
+			if((checkSYMTAB(line_tok[0])>0) || (getHash(line_tok[0])<0 && getAD(line_tok[0])<0)){
+				label = line_tok[0];
+				inst = line_tok[1];
+				op1 = line_tok[2];
+			}
+			else{
+				inst = line_tok[0];
+				op1 = line_tok[1];
+				op2 = line_tok[2];
+			}
+		}
+		else if(len==2){
+			//If first token is a label/symbol
+			if((checkSYMTAB(line_tok[0])>0) || (getHash(line_tok[0])<0 && getAD(line_tok[0])<0)){
+				label = line_tok[0];
+				inst = line_tok[1];
+			}
+			else{
+				inst = line_tok[0];
+				op1 = line_tok[1];
+			}
+		}
+		else if(len==1){
+			//If first token is a label/symbol
+			if((checkSYMTAB(line_tok[0])>0) || (getHash(line_tok[0])<0 && getAD(line_tok[0])<0))
+				label = line_tok[0];
+			else
+				inst = line_tok[0];
+		}
+		else{
+			compError("Too many tokens on Line");
+			return 0;
+		}
+		cout<<LC++<<"\t";
+		//Tokenization Complete
+	
+		//label Handling Start
+		if(label.compare("")!=0){
+			cout<<"Label above"<<endl;
+			if(checkSYMTAB(label)>0){					//Symbol already encountered
+				SYMTAB[checkSYMTAB(label)].address = LC;
+			}
+			else if(checkSYMTAB(label)==-1){				//Label doesn't exist in SYMTAB
+				Symbol temp;
+				temp.name = label;
+				temp.address = LC;
+				SYMTAB[STP++] = temp;
+			}
+		}
+		//label Handling End
+		
+		//Instruction Handling Start
+		if (inst.compare("LTORG")==0)
+		{
+		}
+		else if (inst.compare("ORIGIN")==0)
+		{
+		}
+		else if (inst.compare("EQU")==0)
+		{
+		}
+		 if (isImperative(inst))
+		{
+			inst = MOT[getHash(inst)][1];
+			inst = "(IS,"+inst+")";
+			//
+		}
+		else if (isDeclarative(inst))
+		{
+			LC--;
+			Symbol temp = SYMTAB[checkSYMTAB(label)];
+			temp.size = op1;
+			string op_copy = op1.c_str();
+			char csize[6];
+			if(inst.compare("DC")==0){
+			
+				inst = "(DL,01)";
+				op1.erase(0,1);
+				op1.erase(op1.length()-1,op1.length());
+				LC++;
+			}
+			else{
+				inst = "(DL,02)";
+				strcpy(csize,op1.c_str());
+				LC+=atoi(csize);
+			}
+			int index = checkSYMTAB(label);
+			if(index!=-1)
+				SYMTAB[index] = temp;
+			else
+				compError("Sudden Label MisMatch");
+			op1 = "(C,"+op_copy+")";
+		}
+		cout<<label<<"\t"<<inst<<"\t"<<op1<<"\t"<<op2<<endl;
+		//label Handling End
+		
+	//Previous Tokenization Attempt
+	/*
+		string output;
 		///////////////////////////////////////////////////////////////////////////////////////
 		//Now Tokenizng statement
 		char c_line[line.length()+1];
@@ -312,51 +433,10 @@ int main(int argc,char** argv){
 				return 0;
 			}
 		}
+		*/
 		//Tokenisation End
-		cout<<LC;
-		if (inst.compare("LTORG")==0)
-		{
-			/* code */
-		}
-		 if (inst.compare("ORIGIN")==0)
-		{
-			/* code */
-		}
-		 if (inst.compare("EQU")==0)
-		{
-			/* code */
-		}
-		 if (isImperative(inst))
-		{
-			/* code */
-			LC++;
-		}
-		 if (isDeclarative(inst))
-		{
-			Symbol temp = SYMTAB[checkSYMTAB(label)];
-			temp.size = op1;
-			string op_copy = op1.c_str();
-			char csize[6];
-			if(inst.compare("DC")==0){
-			
-				inst = "(DL,01)";
-				op1.erase(0,1);
-				op1.erase(op1.length()-1,op1.length());
-				LC++;
-			}
-			else{
-				inst = "(DL,02)";
-				strcpy(csize,op1.c_str());
-				LC+=atoi(csize);
-			}
-			int index = checkSYMTAB(label);
-			if(index!=-1)
-				SYMTAB[index] = temp;
-			else
-				compError("Sudden Label MisMatch");
-			op1 = "(C,"+op_copy+")";
-		}
-		cout<<"\t"<<inst<<"\t"<<op1<<"\t"<<op2<<endl;
+		//cout<<LC;
+		//cout<<"\t"<<inst<<"\t"<<op1<<"\t"<<op2<<endl;
 	}
 	cout<<"Program wrapping UP\n";
 	cout<<"Final Values: \n";

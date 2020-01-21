@@ -85,7 +85,7 @@ int check_littab(lit_table literal_table[N],int start,int end,char s[])
 }
 
 
-int main()
+int main(int argc, char** argv)
 {
 	sym_table symbol_table[N];                  //symbol_table array
 	lit_table literal_table[N];                 //Literal table array
@@ -99,7 +99,7 @@ int main()
 	char label[N],mnemonic[N],operand1[N],operand2[N],name[N],opcode[N],type[N],n[N],symbol[N],value[N];
 	
 	printf("PASS 1 ASSEMBLER\n");
-	f1=fopen("input1.txt","r");
+	f1=fopen(argv[1],"r");
 	f2=fopen("mot.txt","r");
 	f3=fopen("output1.txt","w+");
 	
