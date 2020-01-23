@@ -7,7 +7,7 @@ using namespace std;
 
 int LC = 0;  //Location Counter
 int PTP = 0; //Pooltab Pointer
-int LTP = 0; //Location Table Pointer
+int LTP = 0; //Literal Table Pointer
 int STP = 0; //Symbol Table Pointer
 int POOLTAB[1000];
 
@@ -19,8 +19,7 @@ typedef struct Symbol
 } Symbol;
 
 Symbol SYMTAB[100];
-int checkSYMTAB(string name)
-{
+int checkSYMTAB(string name){
 	for (int i = 0; i < STP; i++)
 	{
 		if (name.compare(SYMTAB[i].name) == 0)
@@ -41,6 +40,16 @@ bool isLiteral(string name){
 	if(str[0]=='=')
 		return true;
 	return false;
+}
+
+int checkLITTAB(string name)
+{
+	for (int i = POOLTAB[PTP]; i < LTP; i++)
+	{
+		if (name.compare(LITTAB[i].name) == 0)
+			return i;
+	}
+	return -1;
 }
 
 Literal LITTAB[100];
@@ -243,12 +252,12 @@ int main(int argc,char** argv){
 		//Tokenization Complete
 	
 		//label Handling Start
-		if(label.compare("")!=0){
+		if(label.compare("")!=0){						//if Label variable is not empty
 			cout<<"Label above"<<endl;
 			if(checkSYMTAB(label)>0){					//Symbol already encountered
 				SYMTAB[checkSYMTAB(label)].address = LC;
 			}
-			else if(checkSYMTAB(label)==-1){				//Label doesn't exist in SYMTAB
+			else if(checkSYMTAB(label)==-1){			//Label doesn't exist in SYMTAB
 				Symbol temp;
 				temp.name = label;
 				temp.address = LC;
@@ -271,7 +280,41 @@ int main(int argc,char** argv){
 		{
 			inst = MOT[getHash(inst)][1];
 			inst = "(IS,"+inst+")";
-			//
+			//Check operands
+			//Operand 1
+			if(isLiteral(op1)){
+				//Operand 1 is Literal
+				if(checkLITTAB(op1)==-1){
+					//Operand 1 does not exist in LITTAB
+					Literal temp;
+					temp.name = op1;
+					LITTAB[LTP++] = temp;
+					op1 = "(L" + to_string(LTP-1) + ")";
+				}
+			}
+			else if(getReg(op1)!=NULL)
+				//If Operand 1 is a Register
+				op1 =  getReg(op1);
+			//If not Literal or not Register then a Symbol
+			else {
+				if (checkSYMTAB(op1)==-1){
+					//If Symbol doesn't exist in SYMTAB
+				}
+				else{
+					//If Symbol exists in SYMTAB
+				}
+			}
+			//Operand 2
+			if(isLiteral(op2)){
+				//Operand 2 is Literal
+				if(checkLITTAB(op2)==-1){
+					//Operand 1 does not exist in LITTAB
+					Literal temp;
+					temp.name = op2;
+					LITTAB[LTP++] = temp;
+					op2 = "(L" + to_string(LTP-1) + ")";
+				}
+			}
 		}
 		else if (isDeclarative(inst))
 		{
@@ -434,7 +477,7 @@ int main(int argc,char** argv){
 			}
 		}
 		*/
-		//Tokenisation End
+		// Previous Tokenisation End
 		//cout<<LC;
 		//cout<<"\t"<<inst<<"\t"<<op1<<"\t"<<op2<<endl;
 	}
