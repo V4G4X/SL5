@@ -35,12 +35,14 @@ typedef struct Literal
 } Literal;
 
 bool isLiteral(string name){
-	char* str;
+	char str[name.length()];
 	strcpy(str,name.c_str());
 	if(str[0]=='=')
 		return true;
 	return false;
 }
+
+Literal LITTAB[100];
 
 int checkLITTAB(string name)
 {
@@ -51,8 +53,6 @@ int checkLITTAB(string name)
 	}
 	return -1;
 }
-
-Literal LITTAB[100];
 
 char REG[4][2][5] = {
 	//REG[x][] is used for iteration,
@@ -73,6 +73,7 @@ char *getReg(string str)
 }
 
 char MOT[13][6][6]={
+//				0	  1    2    3    	  4 	  5
 /*0*/		{"MULT"	,"03","IS","2"		,"2",	"-1"},
 /*1*/		{"READ"	,"09","IS","2"		,"1",	"-1"},
 /*2*/		{"MOVEM","05","IS","2"		,"2",	"3"},
@@ -250,10 +251,9 @@ int main(int argc,char** argv){
 		}
 		cout<<LC++<<"\t";
 		//Tokenization Complete
-	
+		cout<<"Tokenization Complete\t"<<label<<"\t"<<inst<<"\t"<<op1<<"\t"<<op2<<endl;
 		//label Handling Start
 		if(label.compare("")!=0){						//if Label variable is not empty
-			cout<<"Label above"<<endl;
 			if(checkSYMTAB(label)>0){					//Symbol already encountered
 				SYMTAB[checkSYMTAB(label)].address = LC;
 			}
@@ -265,7 +265,7 @@ int main(int argc,char** argv){
 			}
 		}
 		//label Handling End
-		
+		// cout<<"Label above: "<<endl;
 		//Instruction Handling Start
 		if (inst.compare("LTORG")==0)
 		{
@@ -278,12 +278,19 @@ int main(int argc,char** argv){
 		}
 		 if (isImperative(inst))
 		{
+			if(inst.compare("STOP")==0){
+				cout<<"BreakPoint Here"<<endl;
+			}
+			// cout<<"Imperative Statement"<<endl;
 			inst = MOT[getHash(inst)][1];
 			inst = "(IS,"+inst+")";
+			// cout<<"Inst updated as: "<<inst<<endl;
 			//Check operands
+
 			//Operand 1
 			if(isLiteral(op1)){
 				//Operand 1 is Literal
+				// cout<<"Entered 'Is Literal' block"<<endl;
 				if(checkLITTAB(op1)==-1){
 					//Operand 1 does not exist in LITTAB
 					Literal temp;
@@ -291,18 +298,24 @@ int main(int argc,char** argv){
 					LITTAB[LTP++] = temp;
 					op1 = "(L" + to_string(LTP-1) + ")";
 				}
+				op1 = "(L" + to_string(checkLITTAB(op1)) + ")";
 			}
-			else if(getReg(op1)!=NULL)
+			else if(getReg(op1)!=NULL){
 				//If Operand 1 is a Register
+				// cout<<"Entered 'Is Register' block"<<endl;
 				op1 =  getReg(op1);
+				// cout<<"Operand 1 is now: "<<op1<<endl;
+			}
 			//If not Literal or not Register then a Symbol
 			else {
 				if (checkSYMTAB(op1)==-1){
 					//If Symbol doesn't exist in SYMTAB
+					Symbol temp;
+					temp.name = op1;
+					SYMTAB[STP++] = temp;
 				}
-				else{
-					//If Symbol exists in SYMTAB
-				}
+				else
+					op2 = "(S" + to_string(checkSYMTAB(op2)) + ")";
 			}
 			//Operand 2
 			if(isLiteral(op2)){
@@ -314,7 +327,26 @@ int main(int argc,char** argv){
 					LITTAB[LTP++] = temp;
 					op2 = "(L" + to_string(LTP-1) + ")";
 				}
+				else
+					op2 = "(L" + to_string(checkLITTAB(op2)) + ")";
 			}
+			else if(getReg(op2)!=NULL){
+				//If Operand 1 is a Register
+				// cout<<"Entered 'Is Register' block"<<endl;
+				op2 =  getReg(op2);
+				// cout<<"Operand 1 is now: "<<op1<<endl;
+			}
+			//If not Literal or not Register then a Symbol
+			else {
+				if (checkSYMTAB(op2)==-1){
+					//If Symbol doesn't exist in SYMTAB
+					Symbol temp;
+					temp.name = op2;
+					SYMTAB[STP++] = temp;
+				}
+				op2 = "(S" + to_string(checkSYMTAB(op2)) + ")";
+			}
+			LC++;
 		}
 		else if (isDeclarative(inst))
 		{
@@ -324,7 +356,6 @@ int main(int argc,char** argv){
 			string op_copy = op1.c_str();
 			char csize[6];
 			if(inst.compare("DC")==0){
-			
 				inst = "(DL,01)";
 				op1.erase(0,1);
 				op1.erase(op1.length()-1,op1.length());
@@ -492,7 +523,13 @@ int main(int argc,char** argv){
 	for (int i = 0; i < STP; i++)
 	{
 		Symbol temp = SYMTAB[i];
-		cout<<temp.name<<"\t"<<temp.address<<"\t"<<temp.size<<endl;
+		cout<<i<<"\t"<<temp.name<<"\t"<<temp.address<<"\t"<<temp.size<<endl;
+	}
+	cout<<"Literal Table Below"<<endl;
+	for (int i = 0; i < LTP; i++)
+	{
+		Literal temp = LITTAB[i];
+		cout<<i<<"\t"<<temp.name<<"\t"<<temp.address<<endl;
 	}
 	// Write SYMBOL Table End
 	reader.close();
