@@ -12,7 +12,7 @@ void MergeSort(int arr[],int n){
         {
             int temp = arr[1];
             arr[1] = arr[0];
-            arr[0] = arr[1];
+            arr[0] = temp;
         }
     }
     int arr1[n/2];
@@ -51,15 +51,33 @@ int main(int argc, char const *argv[])
     //Initialize Input
     //I.e No. of Tapes
     int T = 3;
-    int Tape[T];
+    int Tape[T][1000];
+    int TapePos[T];
     //No. of Programs
     int P = 5;
     //Length of Programs
-    int[] prog = {67,23,87,12,89};
+    int prog[] = {67,23,87,12,89};
     //Sort the programs according to length
     MergeSort(prog,5);
     //Lay programs like laying cards
-    for(int i=0 ; i< P ; i++)
-        
+    int currCard = 0;
+    for(int i=0 ; i < P ; i++){
+        Tape[currCard][TapePos[currCard]] = prog[i];
+        TapePos[currCard]++;
+        currCard=(currCard+1)%T;
+    }
+    //Print Every Tape
+    float aver=0.0;
+    for(int i=0 ; i<T ; i++){
+        float avg=0.0;
+        for (int j = 0; j < TapePos[i]; j++){
+            cout<<Tape[i][j]<<"\t";
+            avg+=Tape[i][j];
+        }
+        cout<<endl;
+        aver+=(avg/TapePos[i]);
+    }
+    aver/=T;
+    cout<<"Retrieval Time is: "<<aver<<endl;
     return 0;
 }
