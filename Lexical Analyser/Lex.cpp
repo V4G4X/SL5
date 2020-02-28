@@ -17,8 +17,6 @@ int main(int argc, char const *argv[])
 	while(reader.get(in)){
 		if(in==reader.eof())	break;
 		cout<<in;
-		// if(in != ' ' && in != '\t')
-		// 	continue;
 		token[tok_pos++] = in;
 		ifstream terminal("Terminal");
 		while(!terminal.eof()){
